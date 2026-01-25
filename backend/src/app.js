@@ -1,0 +1,43 @@
+import express from "express"
+import cors from "cors"
+
+import authRoutes from "./routes/auth.routes.js"
+import organiserRoutes from "./routes/organiser.routes.js"
+import adminRoutes from "./routes/admin.routes.js"
+import userRoutes from "./routes/user.routes.js"
+import eventRoutes from "./routes/event.routes.js"
+import userProfileRoutes from "./routes/userProfile.routes.js"
+import teammateRoutes from "./routes/teammate.routes.js"
+
+
+
+const app = express()
+
+/* -------------------- CORS (FIXED & SAFE) -------------------- */
+app.use(
+  cors({
+    origin: true, // ✅ reflect request origin
+    credentials: true,
+  })
+)
+
+/* -------------------- MIDDLEWARE -------------------- */
+app.use(express.json())
+
+/* -------------------- ROUTES -------------------- */
+app.use("/api/auth", authRoutes)
+app.use("/api/organiser", organiserRoutes)
+app.use("/api/admin", adminRoutes)
+app.use("/api/user", userRoutes)
+app.use("/api/events", eventRoutes)
+app.use("/api/user-profile", userProfileRoutes)
+app.use("/api/teammates", teammateRoutes)
+
+
+
+/* -------------------- HEALTH -------------------- */
+app.get("/health", (req, res) => {
+  res.send("OK")
+})
+
+export default app

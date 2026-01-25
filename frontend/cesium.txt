@@ -1,0 +1,264 @@
+
+
+// import { useEffect, useRef } from "react"
+
+// export default function CesiumHero() {
+//   const containerRef = useRef<HTMLDivElement>(null)
+//   const cesiumViewerRef = useRef<any>(null)
+
+//   useEffect(() => {
+//     const loadCesium = async () => {
+//       if (!containerRef.current) return
+
+//       try {
+//         // Import Cesium dynamically
+//         const Cesium = await import("cesium")
+
+//         // Set Cesium ion access token
+//         Cesium.Ion.defaultAccessToken =
+//           "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIwNDI1MjZiNC01YzJhLTQzOWQtODMwMC04NzM2Zjg5MzljYTAiLCJpZCI6MTY4MjMyLCJpYXQiOjE2ODk2NzY5Nzh9.dYj-ybY6TG1T4j5WxL8xVk4G-S0lGx7q9Jx0lW9ZS1I"
+
+//         // Create viewer
+//         const viewer = new Cesium.Viewer(containerRef.current, {
+//           animation: false,
+//           baseLayerPicker: false,
+//           fullscreenButton: false,
+//           geocoder: false,
+//           homeButton: false,
+//           infoBox: false,
+//           sceneModePicker: false,
+//           selectionIndicator: false,
+//           timeline: false,
+//           navigationHelpButton: false,
+//           terrain: Cesium.Terrain.fromWorldTerrain(),
+//         })
+
+//         // Enable FXAA for better quality
+//         viewer.scene.postProcessStages.fxaa.enabled = true
+
+//         // Set background color to match theme
+//         viewer.scene.backgroundColor = Cesium.Color.fromCssColorString("#0f0f23")
+
+//         // Disable interaction
+//         viewer.screenSpaceEventHandler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK)
+//         viewer.screenSpaceEventHandler.removeInputAction(Cesium.ScreenSpaceEventType.MOUSE_MOVE)
+//         viewer.screenSpaceEventHandler.removeInputAction(Cesium.ScreenSpaceEventType.WHEEL)
+//         viewer.screenSpaceEventHandler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_DOWN)
+//         viewer.screenSpaceEventHandler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_UP)
+//         viewer.screenSpaceEventHandler.removeInputAction(Cesium.ScreenSpaceEventType.PINCH_START)
+//         viewer.screenSpaceEventHandler.removeInputAction(Cesium.ScreenSpaceEventType.PINCH_MOVE)
+//         viewer.screenSpaceEventHandler.removeInputAction(Cesium.ScreenSpaceEventType.PINCH_END)
+
+//         // Position camera to show Earth with cinematic view
+//         viewer.camera.setView({
+//           destination: Cesium.Cartesian3.fromDegrees(20, 10, 15000000),
+//           orientation: {
+//             heading: Cesium.Math.toRadians(0),
+//             pitch: Cesium.Math.toRadians(-30),
+//             roll: 0,
+//           },
+//         })
+
+//         // Add floating pins over India
+//         const locations = [
+//           { lon: 77.209, lat: 28.6139, name: "Hackathon – Delhi", color: "#66c8ff" },
+//           { lon: 77.5946, lat: 12.9716, name: "Workshop – Bangalore", color: "#66c8ff" },
+//           { lon: 73.8355, lat: 18.5204, name: "Tech Event – Pune", color: "#66c8ff" },
+//         ]
+
+//         locations.forEach((loc, index) => {
+//           const position = Cesium.Cartesian3.fromDegrees(loc.lon, loc.lat, 500000)
+
+//           // Add point primitive
+//           viewer.entities.add({
+//             position: position,
+//             point: {
+//               pixelSize: 8,
+//               color: Cesium.Color.fromCssColorString(loc.color),
+//               outlineColor: Cesium.Color.TRANSPARENT,
+//             },
+//           })
+
+//           // Add glow effect with delay
+//           setTimeout(() => {
+//             const pointEntity = viewer.entities.getById(`pin-${index}`)
+//             if (pointEntity) {
+//               // Animate glow
+//               let opacity = 0.3
+//               let direction = 0.01
+
+//               setInterval(() => {
+//                 opacity += direction
+//                 if (opacity >= 1) direction = -0.01
+//                 if (opacity <= 0.3) direction = 0.01
+//               }, 50)
+//             }
+//           }, index * 500)
+//         })
+
+//         // Rotate camera slowly around Earth
+//         let rotationAngle = 0
+//         const rotationSpeed = 0.001
+
+//         viewer.scene.preRender.addEventListener(() => {
+//           rotationAngle += rotationSpeed
+//           viewer.camera.setView({
+//             destination: Cesium.Cartesian3.fromDegrees(
+//               20 + Math.cos(rotationAngle) * 50,
+//               10 + Math.sin(rotationAngle) * 20,
+//               15000000,
+//             ),
+//             orientation: {
+//               heading: Cesium.Math.toRadians(rotationAngle * 100),
+//               pitch: Cesium.Math.toRadians(-30),
+//               roll: 0,
+//             },
+//           })
+//         })
+
+//         cesiumViewerRef.current = viewer
+//       } catch (error) {
+//         console.error("Failed to load Cesium:", error)
+//       }
+//     }
+
+//     // Load Cesium script
+//     const script = document.createElement("script")
+//     script.src = "https://cesium.com/downloads/cesiumjs/releases/1.104/Cesium.js"
+//     script.async = true
+//     script.onload = loadCesium
+//     script.onerror = () => console.error("Failed to load Cesium script")
+//     document.head.appendChild(script)
+
+//     // Load Cesium CSS
+//     const link = document.createElement("link")
+//     link.rel = "stylesheet"
+//     link.href = "https://cesium.com/downloads/cesiumjs/releases/1.104/Widgets/widgets.css"
+//     document.head.appendChild(link)
+
+//     return () => {
+//       if (cesiumViewerRef.current) {
+//         cesiumViewerRef.current.destroy()
+//       }
+//     }
+//   }, [])
+
+//   return (
+//     <div
+//       ref={containerRef}
+//       className="w-full h-full absolute inset-0"
+//       style={{
+//         backgroundImage: "linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)",
+//       }}
+//     />
+//   )
+// }
+
+/////////////////////////////////////////////////////
+
+// import { useEffect, useRef } from "react"
+
+
+// export default function CesiumHero() {
+//   const containerRef = useRef(null)
+//   const cesiumViewerRef = useRef(null)
+
+//   useEffect(() => {
+//     const loadCesium = async () => {
+//       if (!containerRef.current) return
+
+//       try {
+//         // Import Cesium dynamically
+//         const Cesium = await import("cesium")
+
+//         // Set Cesium ion access token
+//         Cesium.Ion.defaultAccessToken ="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJjZjNhYzRkZS0zNGVkLTRlMDEtODI1Zi1kMzRkMzBmOTdiNzUiLCJpZCI6Mzc4MjMxLCJpYXQiOjE3NjgzMzY0NTh9.skg0AVZVfS_wqbO8AC0uG9X9DAfhRRtHBBHor9VcxGA"
+
+//         window.CESIUM_BASE_URL = "/cesium"
+//         // Create viewer
+//         const viewer = new Cesium.Viewer(containerRef.current, {
+//           animation: false,
+//           baseLayerPicker: false,
+//           fullscreenButton: false,
+//           geocoder: false,
+//           homeButton: false,
+//           infoBox: false,
+//           sceneModePicker: false,
+//           selectionIndicator: false,
+//           timeline: false,
+//           navigationHelpButton: false,
+//           terrain: Cesium.Terrain.fromWorldTerrain(),
+//         })
+
+//         // Enable FXAA for better quality
+//         viewer.scene.postProcessStages.fxaa.enabled = true
+
+//         // Set background color
+//         viewer.scene.backgroundColor =
+//           Cesium.Color.fromCssColorString("#0f0f23")
+
+//         // Disable interaction
+//         const handler = viewer.screenSpaceEventHandler
+//         handler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK)
+//         handler.removeInputAction(Cesium.ScreenSpaceEventType.MOUSE_MOVE)
+//         handler.removeInputAction(Cesium.ScreenSpaceEventType.WHEEL)
+//         handler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_DOWN)
+//         handler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_UP)
+//         handler.removeInputAction(Cesium.ScreenSpaceEventType.PINCH_START)
+//         handler.removeInputAction(Cesium.ScreenSpaceEventType.PINCH_MOVE)
+//         handler.removeInputAction(Cesium.ScreenSpaceEventType.PINCH_END)
+
+//         // Initial camera
+//         viewer.camera.setView({
+//           destination: Cesium.Cartesian3.fromDegrees(20, 10, 15_000_000),
+//           orientation: {
+//             heading: 0,
+//             pitch: Cesium.Math.toRadians(-30),
+//             roll: 0,
+//           },
+//         })
+
+//         // Rotate camera slowly
+//         let angle = 0
+//         viewer.scene.preRender.addEventListener(() => {
+//           angle += 0.001
+//           viewer.camera.setView({
+//             destination: Cesium.Cartesian3.fromDegrees(
+//               20 + Math.cos(angle) * 50,
+//               10 + Math.sin(angle) * 20,
+//               15_000_000
+//             ),
+//             orientation: {
+//               heading: angle,
+//               pitch: Cesium.Math.toRadians(-30),
+//               roll: 0,
+//             },
+//           })
+//         })
+
+//         cesiumViewerRef.current = viewer
+//       } catch (err) {
+//         console.error("Failed to load Cesium:", err)
+//       }
+//     }
+
+//     loadCesium()
+
+//     return () => {
+//       if (cesiumViewerRef.current) {
+//         cesiumViewerRef.current.destroy()
+//       }
+//     }
+//   }, [])
+
+//   return (
+//     <div
+//       ref={containerRef}
+//       className="absolute inset-0"
+//       style={{
+//         background:
+//           "linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)",
+//       }}
+//     />
+//   )
+// }
