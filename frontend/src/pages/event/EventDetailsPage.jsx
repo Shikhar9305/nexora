@@ -20,7 +20,7 @@ import {
   CheckCircle,
   UserPlus,
 } from "lucide-react"
-import FindTeammatesModal from "../../components/event/FindTeammatesModal"
+
 
 const typeColors = {
   hackathon: "bg-cyan-500/20 text-cyan-400 border-cyan-500/30",
@@ -41,7 +41,7 @@ export default function EventDetailsPage() {
   const [loading, setLoading] = useState(true)
   const [isSaved, setIsSaved] = useState(false)
   const [registrationDeadlineStatus, setRegistrationDeadlineStatus] = useState(null)
-  const [showTeammateModal, setShowTeammateModal] = useState(false)
+
 
   useEffect(() => {
     // Fetch event from API
@@ -317,7 +317,7 @@ export default function EventDetailsPage() {
               {/* Find Teammates (Hackathons only) */}
               {event.type === "hackathon" && registrationOpen && (
                 <button
-                  onClick={() => setShowTeammateModal(true)}
+                  onClick={() => navigate(`/event/${event._id || id}/teammates`)}
                   className="w-full py-2 border border-accent text-accent rounded-lg font-semibold hover:bg-accent/10 transition flex items-center justify-center gap-2"
                 >
                   <UserPlus className="w-5 h-5" />
@@ -366,14 +366,7 @@ export default function EventDetailsPage() {
         </div>
       </div>
 
-      {/* Find Teammates Modal */}
-      {showTeammateModal && (
-        <FindTeammatesModal
-          eventId={event._id}
-          onClose={() => setShowTeammateModal(false)}
-          onJoin={() => navigate(`/event/${event._id}/teammates`)}
-        />
-      )}
+    
     </div>
   )
 }

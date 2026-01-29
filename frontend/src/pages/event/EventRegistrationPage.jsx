@@ -1,12 +1,17 @@
 'use client';
 
-import { useState, useEffect } from "react"
-import { useParams, useNavigate } from "react-router-dom"
+import { useState, useEffect, useMemo, useCallback } from "react"
+
+import { useParams, useNavigate, useSearchParams } from "react-router-dom"
 import { ArrowLeft, Users, AlertCircle, CheckCircle } from "lucide-react"
 
 export default function EventRegistrationPage() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+
+  const mode = searchParams.get("mode")
+  const teamId = searchParams.get("teamId")
 
   const [event, setEvent] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -14,6 +19,8 @@ export default function EventRegistrationPage() {
   const [error, setError] = useState(null)
   const [success, setSuccess] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+
+  const [teamPrefillApplied, setTeamPrefillApplied] = useState(false)
 
   // Form state
   const [formData, setFormData] = useState({
@@ -41,63 +48,88 @@ export default function EventRegistrationPage() {
     fetchEvent()
   }, [id])
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-12 h-12 border-2 border-accent border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading...</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (!event) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-2">Event not found</h1>
-          <button
-            onClick={() => navigate("/explore")}
-            className="px-4 py-2 bg-accent text-accent-foreground rounded-lg"
-          >
-            Back to Explore
-          </button>
-        </div>
-      </div>
-    )
-  }
-
-  const isHackathon = event.type === "hackathon"
+  // Compute derived values (must be before early returns to maintain hook order)
+  const isHackathon = event?.type === "hackathon"
+  const isMatchmakingMode = mode === "matchmaking" && !!teamId
   const remainingSlots =
-    event.maxParticipants && event.maxParticipants > 0
+    event?.maxParticipants && event.maxParticipants > 0
       ? event.maxParticipants - event.currentParticipants
       : null
+
+  // 🔒 Max team size allowed for this event
+  const maxTeamSizeAllowed =
+    event?.supportsTeams && event.maxTeamSize
+      ? event.maxTeamSize
+      : 1
 
   const isTeamSizeValid =
     !remainingSlots || formData.teamSize <= remainingSlots
 
   // Handle team size change with validation
-  const handleTeamSizeChange = (size) => {
-    setFormData({
-      ...formData,
+  const handleTeamSizeChange = useCallback((size) => {
+    setFormData((prev) => ({
+      ...prev,
       teamSize: size,
       members: Array(size)
         .fill(null)
-        .map((_, idx) => formData.members[idx] || { name: "", email: "" }),
-    })
+        .map((_, idx) => prev.members[idx] || { name: "", email: "" }),
+    }))
     setError(null)
-  }
+  }, [])
+
+  // Prefill from matchmaking team if present
+  useEffect(() => {
+    const shouldPrefill =
+      isHackathon && isMatchmakingMode && !!event && !teamPrefillApplied
+
+    if (!shouldPrefill) return
+
+    const userId = localStorage.getItem("userId")
+    if (!userId) return
+
+    const applyTeamPrefill = async () => {
+      try {
+        const res = await fetch(`/api/teams/my/${id}?userId=${userId}`)
+        const data = await res.json().catch(() => ({}))
+        if (!res.ok || !data?.team) return
+
+        const team = data.team
+        const effectiveSize =
+          team.maxSize || event.maxTeamSize || formData.teamSize || 1
+
+        setFormData({
+          teamName: team.teamName || "",
+          teamSize: effectiveSize,
+          // Existing team members occupy slots; remaining are empty for manual entry
+          members: Array.from({ length: effectiveSize }).map(() => ({
+            name: "",
+            email: "",
+          })),
+        })
+
+        setCurrentStep(2)
+        setTeamPrefillApplied(true)
+        setError(null)
+      } catch (prefillError) {
+        console.error("[v0] Error pre-filling team from matchmaking:", prefillError)
+      }
+    }
+
+    applyTeamPrefill()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, event, isHackathon, isMatchmakingMode, teamPrefillApplied])
 
   // Update team member
-  const updateMember = (index, field, value) => {
-    const updatedMembers = [...formData.members]
-    updatedMembers[index] = { ...updatedMembers[index], [field]: value }
-    setFormData({ ...formData, members: updatedMembers })
-  }
+  const updateMember = useCallback((index, field, value) => {
+    setFormData((prev) => {
+      const updatedMembers = [...prev.members]
+      updatedMembers[index] = { ...updatedMembers[index], [field]: value }
+      return { ...prev, members: updatedMembers }
+    })
+  }, [])
 
   // Handle registration submission
-  const handleSubmit = async () => {
+  const handleSubmit = useCallback(async () => {
     try {
       setSubmitting(true)
       setError(null)
@@ -124,11 +156,14 @@ export default function EventRegistrationPage() {
             eventId: id,
             teamName: formData.teamName,
             teamSize: formData.teamSize,
-            members: formData.members.map((m) => ({
+            members: formData.members.map((m, index) => ({
               name: m.name.trim(),
-              email: m.email.trim() || `member${formData.members.indexOf(m) + 1}@event.local`,
+              email:
+                m.email.trim() ||
+                `member${index + 1}@event.local`,
             })),
             registeredBy: localStorage.getItem("userId"),
+            ...(isMatchmakingMode && teamId ? { teamId } : {}),
           }
         : {
             eventId: id,
@@ -169,108 +204,125 @@ export default function EventRegistrationPage() {
     } finally {
       setSubmitting(false)
     }
-  }
+  }, [isHackathon, formData, id, event, navigate, isMatchmakingMode, teamId])
 
   // Step 1: Team Details (Hackathon) or Confirmation (Others)
-  const Step1 = () =>
-    isHackathon ? (
-      <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-semibold mb-2">Team Name</label>
-          <input
-            type="text"
-            value={formData.teamName}
-            onChange={(e) =>
-              setFormData({ ...formData, teamName: e.target.value })
-            }
-            placeholder="e.g., Code Crusaders"
-            className="w-full px-4 py-2 bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-semibold mb-3">
-            Team Size: <span className="text-accent">{formData.teamSize}</span>
-          </label>
-          <div className="flex gap-2">
-            {Array.from({ length: Math.min(10, remainingSlots || 10) }).map(
-              (_, i) => (
-                <button
-                  key={i + 1}
-                  onClick={() => handleTeamSizeChange(i + 1)}
-                  className={`w-10 h-10 rounded-lg font-semibold transition ${
-                    formData.teamSize === i + 1
-                      ? "bg-accent text-accent-foreground"
-                      : "bg-input border border-border hover:border-accent"
-                  }`}
-                >
-                  {i + 1}
-                </button>
-              ),
-            )}
-          </div>
-
-          {!isTeamSizeValid && (
-            <div className="mt-3 p-3 bg-red-500/10 border border-red-500/30 rounded-lg flex gap-2">
-              <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
-              <div>
-                <p className="text-sm font-semibold text-red-400">
-                  Only {remainingSlots} slots remaining
-                </p>
-                <p className="text-xs text-red-300">
-                  Reduce team size to register
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
-
-        <button
-          onClick={() => setCurrentStep(2)}
-          disabled={!isTeamSizeValid || !formData.teamName.trim()}
-          className="w-full py-2 bg-accent text-accent-foreground rounded-lg font-semibold hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition"
-        >
-          Continue to Team Members
-        </button>
+  const step1Content = useMemo(() => {
+  return isHackathon ? (
+    <div className="space-y-4">
+      <div>
+        <label className="block text-sm font-semibold mb-2">Team Name</label>
+        <input
+          type="text"
+          value={formData.teamName}
+          onChange={(e) =>
+            setFormData((prev) => ({ ...prev, teamName: e.target.value }))
+          }
+          placeholder="e.g., Code Crusaders"
+          className="w-full px-4 py-2 bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
+        />
       </div>
-    ) : (
-      // Individual Registration Confirmation
-      <div className="space-y-4">
-        <div className="p-4 bg-input rounded-lg">
-          <p className="text-sm text-muted-foreground mb-2">
-            Event Registration Type
-          </p>
-          <p className="font-semibold">Individual Registration</p>
-        </div>
 
-        <div className="p-4 bg-input rounded-lg">
-          <p className="text-sm text-muted-foreground mb-2">Number of Seats</p>
-          <p className="text-2xl font-bold">1</p>
-        </div>
-
-        {remainingSlots !== null && (
-          <div className="p-4 bg-input rounded-lg">
-            <p className="text-sm text-muted-foreground mb-2">
-              Remaining Slots
-            </p>
-            <p className="text-2xl font-bold text-green-400">
-              {Math.max(0, remainingSlots)}
-            </p>
+      <div>
+        <label className="block text-sm font-semibold mb-3">
+          Team Size: <span className="text-accent">{formData.teamSize}</span>
+        </label>
+        {!isMatchmakingMode && (
+          <div className="flex gap-2">
+            {Array.from({
+              length: Math.min(
+                maxTeamSizeAllowed,
+                remainingSlots || maxTeamSizeAllowed
+              ),
+            }).map((_, i) => (
+              <button
+                key={i + 1}
+                onClick={() => handleTeamSizeChange(i + 1)}
+                className={`w-10 h-10 rounded-lg font-semibold transition ${
+                  formData.teamSize === i + 1
+                    ? "bg-accent text-accent-foreground"
+                    : "bg-input border border-border hover:border-accent"
+                }`}
+              >
+                {i + 1}
+              </button>
+            ))}
           </div>
         )}
 
-        <button
-          onClick={handleSubmit}
-          disabled={submitting}
-          className="w-full py-2 bg-accent text-accent-foreground rounded-lg font-semibold hover:opacity-90 disabled:opacity-50 transition"
-        >
-          {submitting ? "Registering..." : "Confirm Registration"}
-        </button>
+        {!isTeamSizeValid && (
+          <div className="mt-3 p-3 bg-red-500/10 border border-red-500/30 rounded-lg flex gap-2">
+            <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
+            <div>
+              <p className="text-sm font-semibold text-red-400">
+                Only {remainingSlots} slots remaining
+              </p>
+              <p className="text-xs text-red-300">
+                Reduce team size to register
+              </p>
+            </div>
+          </div>
+        )}
       </div>
-    )
+
+      <button
+        onClick={() => setCurrentStep(2)}
+        disabled={!isTeamSizeValid || !formData.teamName.trim()}
+        className="w-full py-2 bg-accent text-accent-foreground rounded-lg font-semibold hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition"
+      >
+        Continue to Team Members
+      </button>
+    </div>
+  ) : (
+    <div className="space-y-4">
+      <div className="p-4 bg-input rounded-lg">
+        <p className="text-sm text-muted-foreground mb-2">
+          Event Registration Type
+        </p>
+        <p className="font-semibold">Individual Registration</p>
+      </div>
+
+      <div className="p-4 bg-input rounded-lg">
+        <p className="text-sm text-muted-foreground mb-2">Number of Seats</p>
+        <p className="text-2xl font-bold">1</p>
+      </div>
+
+      {remainingSlots !== null && (
+        <div className="p-4 bg-input rounded-lg">
+          <p className="text-sm text-muted-foreground mb-2">
+            Remaining Slots
+          </p>
+          <p className="text-2xl font-bold text-green-400">
+            {Math.max(0, remainingSlots)}
+          </p>
+        </div>
+      )}
+
+      <button
+        onClick={handleSubmit}
+        disabled={submitting}
+        className="w-full py-2 bg-accent text-accent-foreground rounded-lg font-semibold hover:opacity-90 disabled:opacity-50 transition"
+      >
+        {submitting ? "Registering..." : "Confirm Registration"}
+      </button>
+    </div>
+  )
+}, [
+  isHackathon,
+  formData.teamName,
+  formData.teamSize,
+  isTeamSizeValid,
+  remainingSlots,
+  maxTeamSizeAllowed,
+  handleTeamSizeChange,
+  handleSubmit,
+  submitting,
+  event,
+])
 
   // Step 2: Team Members (Hackathon only)
-  const Step2 = () => (
+  const step2Content = useMemo(() => {
+  return (
     <div className="space-y-4">
       <div className="p-4 bg-input rounded-lg mb-4">
         <p className="text-sm text-muted-foreground">Team members</p>
@@ -316,66 +368,103 @@ export default function EventRegistrationPage() {
       </div>
     </div>
   )
+}, [formData.members, formData.teamSize, updateMember, setCurrentStep])
 
   // Step 3: Confirmation (Hackathon only)
-  const Step3 = () => {
-    const slotsAfterRegistration = remainingSlots
-      ? remainingSlots - formData.teamSize
-      : null
-    return (
-      <div className="space-y-4">
-        <div className="bg-accent/10 border border-accent/30 rounded-lg p-4">
-          <h3 className="font-semibold text-accent mb-2">Registration Summary</h3>
-          <div className="space-y-2 text-sm">
-            <p>
-              <span className="text-muted-foreground">Team Name:</span>{" "}
-              <span className="font-semibold">{formData.teamName}</span>
-            </p>
-            <p>
-              <span className="text-muted-foreground">Team Size:</span>{" "}
-              <span className="font-semibold">{formData.teamSize}</span>
-            </p>
-            <p>
-              <span className="text-muted-foreground">Members:</span>
-            </p>
-            <ul className="ml-4 space-y-1">
-              {formData.members.map((m, idx) => (
-                <li key={idx} className="text-xs">
-                  {idx + 1}. {m?.name} {m?.email && `(${m.email})`}
-                </li>
-              ))}
-            </ul>
-            {slotsAfterRegistration !== null && (
-              <p className="pt-2 border-t border-accent/20">
-                <span className="text-muted-foreground">
-                  Remaining slots after registration:
-                </span>{" "}
-                <span className="font-semibold text-accent">
-                  {Math.max(0, slotsAfterRegistration)}
-                </span>
-              </p>
-            )}
-          </div>
-        </div>
+  const step3Content = useMemo(() => {
+  const slotsAfterRegistration = remainingSlots
+    ? remainingSlots - formData.teamSize
+    : null
 
-        <div className="flex gap-2">
+  return (
+    <div className="space-y-4">
+      <div className="bg-accent/10 border border-accent/30 rounded-lg p-4">
+        <h3 className="font-semibold text-accent mb-2">
+          Registration Summary
+        </h3>
+        <div className="space-y-2 text-sm">
+          <p>
+            <span className="text-muted-foreground">Team Name:</span>{" "}
+            <span className="font-semibold">{formData.teamName}</span>
+          </p>
+          <p>
+            <span className="text-muted-foreground">Team Size:</span>{" "}
+            <span className="font-semibold">{formData.teamSize}</span>
+          </p>
+          <p>
+            <span className="text-muted-foreground">Members:</span>
+          </p>
+          <ul className="ml-4 space-y-1">
+            {formData.members.map((m, idx) => (
+              <li key={idx} className="text-xs">
+                {idx + 1}. {m?.name} {m?.email && `(${m.email})`}
+              </li>
+            ))}
+          </ul>
+
+          {slotsAfterRegistration !== null && (
+            <p className="pt-2 border-t border-accent/20">
+              <span className="text-muted-foreground">
+                Remaining slots after registration:
+              </span>{" "}
+              <span className="font-semibold text-accent">
+                {Math.max(0, slotsAfterRegistration)}
+              </span>
+            </p>
+          )}
+        </div>
+      </div>
+
+      <div className="flex gap-2">
+        <button
+          onClick={() => setCurrentStep(2)}
+          className="flex-1 py-2 border border-border rounded-lg font-semibold hover:bg-input transition"
+        >
+          Back
+        </button>
+        <button
+          onClick={handleSubmit}
+          disabled={submitting}
+          className="flex-1 py-2 bg-accent text-accent-foreground rounded-lg font-semibold hover:opacity-90 disabled:opacity-50 transition"
+        >
+          {submitting ? "Registering..." : "Confirm & Register"}
+        </button>
+      </div>
+    </div>
+  )
+}, [formData, remainingSlots, handleSubmit, submitting, setCurrentStep])
+
+  // Early returns must come AFTER all hooks
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-2 border-accent border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!event) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-2">Event not found</h1>
           <button
-            onClick={() => setCurrentStep(2)}
-            className="flex-1 py-2 border border-border rounded-lg font-semibold hover:bg-input transition"
+            onClick={() => navigate("/explore")}
+            className="px-4 py-2 bg-accent text-accent-foreground rounded-lg"
           >
-            Back
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={submitting}
-            className="flex-1 py-2 bg-accent text-accent-foreground rounded-lg font-semibold hover:opacity-90 disabled:opacity-50 transition"
-          >
-            {submitting ? "Registering..." : "Confirm & Register"}
+            Back to Explore
           </button>
         </div>
       </div>
     )
   }
+
+  
+
+
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -450,9 +539,9 @@ export default function EventRegistrationPage() {
 
             {/* Form Content */}
             <div className="bg-card border border-border rounded-xl p-6">
-              {currentStep === 1 && <Step1 />}
-              {currentStep === 2 && isHackathon && <Step2 />}
-              {currentStep === 3 && isHackathon && <Step3 />}
+              {currentStep === 1 &&   step1Content}
+              {currentStep === 2 && isHackathon && step2Content}
+              {currentStep === 3 && isHackathon && step3Content}
             </div>
           </>
         )}

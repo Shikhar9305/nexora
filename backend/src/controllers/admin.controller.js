@@ -60,7 +60,7 @@ export const getAllUsers = async (req, res) => {
 
 export const getPendingOrganisers = async (req, res) => {
   try {
-    const organisers = await OrganiserProfile.find({ approved: false })
+    const organisers = await OrganiserProfile.find({ isApproved: false })
       .populate("userId", "name email")
       .sort({ createdAt: -1 })
 

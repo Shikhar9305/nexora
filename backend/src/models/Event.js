@@ -110,14 +110,20 @@ const eventSchema = new mongoose.Schema(
       type: String,
     },
 
-    maxTeamSize: {
-  type: Number,
-  required: function () {
-    return this.type === "hackathon"
-  },
-  min: 1,
-  default: null // null = solo or unlimited
+supportsTeams: {
+  type: Boolean,
+  default: false
 },
+
+maxTeamSize: {
+  type: Number,
+  min: 2,
+  max: 6,
+  required: function () {
+    return this.supportsTeams === true
+  }
+}
+,
     // STATUS & MODERATION
     status: {
       type: String,

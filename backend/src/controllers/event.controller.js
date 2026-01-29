@@ -4,6 +4,7 @@
 
 import Event from "../models/Event.js"
 import EventRegistration from "../models/EventRegistration.js"
+import Team from "../models/Team.js"
 
 // GET all approved events (Explore)
 export const getApprovedEvents = async (req, res) => {
@@ -36,7 +37,7 @@ export const getEventById = async (req, res) => {
 // POST register for event
 export const registerForEvent = async (req, res) => {
   try {
-    const { eventId, teamName, teamSize, members } = req.body
+    const { eventId, teamName, teamSize, members, teamId } = req.body
 
     if (!eventId || !teamSize || !members) {
       return res.status(400).json({ message: "Invalid registration data" })
@@ -48,10 +49,75 @@ export const registerForEvent = async (req, res) => {
       return res.status(404).json({ message: "Event not found" })
     }
 
+    let effectiveTeamSize = teamSize
+    let finalMembers = members
+    let team = null
+
+    // If a matchmaking team is provided, enforce linkage and team constraints
+    if (teamId) {
+      team = await Team.findById(teamId)
+      if (!team) {
+        return res.status(404).json({ message: "Team not found" })
+      }
+      if (String(team.eventId) !== String(eventId)) {
+        return res
+          .status(400)
+          .json({ message: "Team does not belong to this event" })
+      }
+
+      const registeredByForTeam = req.body.registeredBy
+      if (!registeredByForTeam) {
+        return res.status(401).json({
+          message: "registeredBy is required for team registration",
+        })
+      }
+      if (String(team.leaderId) !== String(registeredByForTeam)) {
+        return res.status(403).json({
+          message: "Only the team leader can register this team",
+        })
+      }
+
+      // Merge existing team membership with manual entries by enforcing final size
+      effectiveTeamSize = team.maxSize
+
+      if (!Array.isArray(members) || members.length !== effectiveTeamSize) {
+        return res.status(400).json({
+          message:
+            "You must provide participant details for all team members before registering",
+        })
+      }
+
+      finalMembers = members
+
+      // If event has a configured maxTeamSize, enforce equality with team.maxSize
+      if (event.supportsTeams && event.maxTeamSize) {
+        if (effectiveTeamSize !== event.maxTeamSize) {
+          return res.status(400).json({
+            message: `Team size must be exactly ${event.maxTeamSize} for this event`,
+          })
+        }
+      }
+    }
+
+    // 🔒 Enforce event maxTeamSize (authoritative backend check)
+    if (event.supportsTeams) {
+      if (!event.maxTeamSize) {
+        return res.status(500).json({
+          message: "Event configuration error: maxTeamSize missing",
+        })
+      }
+
+      if (effectiveTeamSize > event.maxTeamSize) {
+        return res.status(400).json({
+          message: `Team size cannot exceed ${event.maxTeamSize} for this event`,
+        })
+      }
+    }
+
     // Capacity check
     if (
       event.maxParticipants &&
-      event.currentParticipants + teamSize > event.maxParticipants
+      event.currentParticipants + effectiveTeamSize > event.maxParticipants
     ) {
       return res
         .status(400)
@@ -65,14 +131,22 @@ export const registerForEvent = async (req, res) => {
     await EventRegistration.create({
       eventId,
       teamName,
-      teamSize,
-      members,
+      teamSize: effectiveTeamSize,
+      members: finalMembers,
       registeredBy,
     })
 
     // Update participant count
-    event.currentParticipants += teamSize
+    event.currentParticipants += effectiveTeamSize
     await event.save()
+
+    // Lock team once registration succeeds
+    if (team) {
+      team.status = "locked"
+      // Optional flag – will be persisted if present in schema without schema changes
+      team.registered = true
+      await team.save()
+    }
 
     res.status(201).json({ message: "Registration successful" })
   } catch (error) {

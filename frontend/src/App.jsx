@@ -9,8 +9,8 @@ import ExplorePage from "./pages/ExplorePage"
 
 
 import EventDetailsPage from "./pages/event/EventDetailsPage"
-import TeammatePoolPage from "./pages/event/TeammatePoolPage"
 import EventRegistrationPage from "./pages/event/EventRegistrationPage"
+import EventTeammatesPage from "./pages/event/EventTeammatesPage.jsx"
 
 
 // organiser dashboard layout
@@ -46,8 +46,9 @@ function App() {
       <Route path="/user/onboarding" element={<UserOnboarding />} />
       <Route path="/explore" element={<ExplorePage/>} />
       <Route path="/event/:id" element={<EventDetailsPage />} />
-        <Route path="/event/:id/register" element={<EventRegistrationPage />} />
-          <Route path="/event/:id/teammates" element={<TeammatePoolPage />} />
+      <Route path="/event/:id/register" element={<EventRegistrationPage />} />
+      <Route path="/event/:id/teammates" element={<EventTeammatesPage />} />
+      
 
        <Route path="/organiser/dashboard" element={<DashboardLayout />}>
   <Route index element={<DashboardPage />} />

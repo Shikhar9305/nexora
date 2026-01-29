@@ -34,8 +34,8 @@ export default function AdminOrganisers() {
   const handleApprove = async (id) => {
     try {
       const token = localStorage.getItem('token')
-      const res = await fetch(`/api/admin/organisers/${id}/approve`, {
-        method: 'PUT',
+      const res = await fetch(`/api/admin/organiser/approve/${id}`, {
+        method: 'PATCH',
         headers: { Authorization: `Bearer ${token}` },
       })
       if (!res.ok) throw new Error('Failed to approve')

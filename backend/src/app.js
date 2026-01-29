@@ -7,7 +7,10 @@ import adminRoutes from "./routes/admin.routes.js"
 import userRoutes from "./routes/user.routes.js"
 import eventRoutes from "./routes/event.routes.js"
 import userProfileRoutes from "./routes/userProfile.routes.js"
-import teammateRoutes from "./routes/teammate.routes.js"
+
+import organiserEventRoutes from "./routes/organiserEvent.routes.js"
+import matchmakingRoutes from "./routes/matchmaking.routes.js"
+import teamRoutes from "./routes/team.routes.js"
 
 
 
@@ -31,7 +34,9 @@ app.use("/api/admin", adminRoutes)
 app.use("/api/user", userRoutes)
 app.use("/api/events", eventRoutes)
 app.use("/api/user-profile", userProfileRoutes)
-app.use("/api/teammates", teammateRoutes)
+app.use("/api/organiser-events", organiserEventRoutes)
+app.use("/api/matchmaking", matchmakingRoutes)
+app.use("/api", teamRoutes)
 
 
 
