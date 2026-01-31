@@ -31,7 +31,7 @@ export default function EventTeammatesPage() {
     const verifyProfile = async () => {
       try {
         const res = await fetch(
-          `/api/matchmaking/profile/${eventId}?userId=${userId}`
+          `${import.meta.env.VITE_API_BASE_URL}/matchmaking/profile/${eventId}?userId=${userId}`
         )
   
         if (!res.ok) {
@@ -61,7 +61,7 @@ export default function EventTeammatesPage() {
     const fetchEvent = async () => {
       setLoadingEvent(true)
       try {
-        const res = await fetch(`/api/events/${eventId}`)
+        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/events/${eventId}`)
         if (!res.ok) throw new Error("Failed to load event")
         const data = await res.json()
         setEvent(data)
@@ -78,7 +78,7 @@ export default function EventTeammatesPage() {
 
   const loadMyTeam = async () => {
     try {
-      const res = await fetch(`/api/teams/my/${eventId}?userId=${userId}`)
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/teams/my/${eventId}?userId=${userId}`)
       const data = await res.json().catch(() => ({}))
       if (!res.ok) {
         setCurrentTeam(null)
@@ -101,7 +101,7 @@ export default function EventTeammatesPage() {
     setPoolLoading(true)
     setPoolError(null)
     try {
-      const res = await fetch(`/api/matchmaking/pool/${eventId}?userId=${userId}`)
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/matchmaking/pool/${eventId}?userId=${userId}`)
       const data = await res.json().catch(() => ({}))
       if (!res.ok) {
         throw new Error(data.message || "Failed to fetch curated pool")

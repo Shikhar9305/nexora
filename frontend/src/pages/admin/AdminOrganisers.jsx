@@ -17,7 +17,7 @@ export default function AdminOrganisers() {
   const fetchOrganisers = async () => {
     try {
       const token = localStorage.getItem('token')
-      const res = await fetch('/api/admin/organisers/pending', {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/admin/organisers/pending`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       if (!res.ok) throw new Error('Failed to fetch organisers')
@@ -34,7 +34,7 @@ export default function AdminOrganisers() {
   const handleApprove = async (id) => {
     try {
       const token = localStorage.getItem('token')
-      const res = await fetch(`/api/admin/organiser/approve/${id}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/admin/organiser/approve/${id}`, {
         method: 'PATCH',
         headers: { Authorization: `Bearer ${token}` },
       })
@@ -50,7 +50,7 @@ export default function AdminOrganisers() {
   const handleReject = async (id) => {
     try {
       const token = localStorage.getItem('token')
-      const res = await fetch(`/api/admin/organisers/${id}/reject`, {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/admin/organisers/${id}/reject`, {
         method: 'PUT',
         headers: {
           Authorization: `Bearer ${token}`,

@@ -30,7 +30,7 @@ useEffect(() => {
       const userId = localStorage.getItem("userId")
       if (!userId) return
 
-      const res = await fetch(`/api/user-profile/dashboard/${userId}`)
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/user-profile/dashboard/${userId}`)
       const data = await res.json()
 
       setSavedEvents(data.savedEvents || [])
@@ -52,7 +52,7 @@ useEffect(() => {
       const userId = localStorage.getItem("userId")
       if (!userId) return
 
-      const res = await fetch(`/api/recommendations/user/${userId}`)
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/recommendations/user/${userId}`)
       const data = await res.json()
 
       setRecommendedEvents(data || [])

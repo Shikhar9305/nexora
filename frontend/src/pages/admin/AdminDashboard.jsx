@@ -12,7 +12,7 @@ export default function AdminDashboard() {
     const fetchStats = async () => {
       try {
         const token = localStorage.getItem('token')
-        const res = await fetch('/api/admin/stats', {
+        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/admin/stats`, {
           headers: { Authorization: `Bearer ${token}` },
         })
         if (!res.ok) throw new Error('Failed to fetch stats')

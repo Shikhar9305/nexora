@@ -15,7 +15,7 @@ export default function AdminEvents() {
   const fetchEvents = async () => {
     try {
       const token = localStorage.getItem('token')
-      const res = await fetch('/api/admin/events', {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/admin/events`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       if (!res.ok) throw new Error('Failed to fetch events')

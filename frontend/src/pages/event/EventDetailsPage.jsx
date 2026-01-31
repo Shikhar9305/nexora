@@ -26,7 +26,7 @@ const track = (type, eventId, metadata = {}) => {
   const userId = localStorage.getItem("userId")
   if (!userId) return
 
-  fetch("/api/interactions", {
+  fetch(`${import.meta.env.VITE_API_BASE_URL}/interactions`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ userId, eventId, type, metadata }),
@@ -60,7 +60,7 @@ export default function EventDetailsPage() {
     // Fetch event from API
     const fetchEvent = async () => {
       try {
-        const response = await fetch(`/api/events/${id}`)
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/events/${id}`)
         if (!response.ok) throw new Error("Event not found")
         const data = await response.json()
         setEvent(data)
@@ -102,7 +102,7 @@ export default function EventDetailsPage() {
       return
     }
 
-    const res = await fetch(`/api/user-profile/save-event/${event._id}`, {
+    const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/user-profile/save-event/${event._id}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

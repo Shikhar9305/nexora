@@ -12,7 +12,7 @@ export default function InvitationPanel({ eventId, onChanged }) {
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch(`/api/teams/invitations/event/${eventId}?userId=${userId}`)
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/teams/invitations/event/${eventId}?userId=${userId}`)
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
         throw new Error(data.message || "Failed to fetch invitations")

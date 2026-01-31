@@ -73,7 +73,7 @@ const handleSubmit = async (e) => {
       role,
     }
 
-    const res = await apiFetch("/api/auth/signup", {
+    const res = await apiFetch(`${import.meta.env.VITE_API_BASE_URL}/auth/signup`, {
       method: "POST",
       body: JSON.stringify(payload),
     })

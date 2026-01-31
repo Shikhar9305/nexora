@@ -15,7 +15,7 @@ export default function AdminUsers() {
   const fetchUsers = async () => {
     try {
       const token = localStorage.getItem('token')
-      const res = await fetch('/api/admin/users', {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/admin/users`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       if (!res.ok) throw new Error('Failed to fetch users')
@@ -33,7 +33,7 @@ export default function AdminUsers() {
     try {
       const token = localStorage.getItem('token')
       const endpoint = isBlocked ? 'unblock' : 'block'
-      const res = await fetch(`/api/admin/users/${id}/${endpoint}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/admin/users/${id}/${endpoint}`, {
         method: 'PUT',
         headers: { Authorization: `Bearer ${token}` },
       })

@@ -56,7 +56,7 @@ export default function MatchmakingProfileForm({ eventId, onCompleted }) {
     setError(null)
 
     try {
-      const res = await fetch("/api/matchmaking/profile", {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/matchmaking/profile`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

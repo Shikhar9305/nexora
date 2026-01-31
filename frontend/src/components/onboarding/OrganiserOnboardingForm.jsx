@@ -97,7 +97,7 @@ const handleSubmit = async (e) => {
       website: formData.website || undefined,
     }
 
-    await apiFetch("/api/organiser/onboarding", {
+    await apiFetch(`${import.meta.env.VITE_API_BASE_URL}/organiser/onboarding`, {
       method: "POST",
       body: JSON.stringify(payload),
     })

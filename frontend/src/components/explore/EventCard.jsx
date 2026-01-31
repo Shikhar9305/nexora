@@ -7,7 +7,7 @@ const track = (type, eventId) => {
   const userId = localStorage.getItem("userId")
   if (!userId) return
 
-  fetch("/api/interactions", {
+  fetch(`${import.meta.env.VITE_API_BASE_URL}/interactions`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ userId, eventId, type }),

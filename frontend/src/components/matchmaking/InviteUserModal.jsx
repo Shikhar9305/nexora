@@ -14,7 +14,7 @@ export default function InviteUserModal({ team, targetProfile, isOpen, onClose, 
     setSubmitting(true)
     setError(null)
     try {
-      const res = await fetch(`/api/teams/${team._id}/invite`, {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/teams/${team._id}/invite`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

@@ -33,7 +33,7 @@ export default function EventRegistrationPage() {
   useEffect(() => {
     const fetchEvent = async () => {
       try {
-        const response = await fetch(`/api/events/${id}`)
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/events/${id}`)
         if (!response.ok) throw new Error("Event not found")
         const data = await response.json()
         setEvent(data)
@@ -89,7 +89,7 @@ export default function EventRegistrationPage() {
 
     const applyTeamPrefill = async () => {
       try {
-        const res = await fetch(`/api/teams/my/${id}?userId=${userId}`)
+        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/teams/my/${id}?userId=${userId}`)
         const data = await res.json().catch(() => ({}))
         if (!res.ok || !data?.team) return
 
@@ -178,7 +178,7 @@ export default function EventRegistrationPage() {
           }
 
       // Submit to backend
-      const response = await fetch("/api/events/register", {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/events/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
