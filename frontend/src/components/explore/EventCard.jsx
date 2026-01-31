@@ -1,6 +1,10 @@
 "use client"
 import { MapPin, Calendar, Users } from "lucide-react"
 import { useEffect } from "react"
+import { Link } from "react-router-dom";
+
+
+
 
 /* ================= TRACK HELPER ================= */
 const track = (type, eventId) => {
@@ -96,15 +100,16 @@ export default function EventCard({ event, isSelected, onSelect }) {
       </div>
 
       {/* CTA (VISUALLY SAME, NOT A BUTTON) */}
-      <a
-        href={`/event/${event._id || event.id}`}
-        className="block"
-        onClick={(e) => e.stopPropagation()}
-      >
+   
+<Link
+  to={`/event/${event._id || event.id}`}
+  className="block"
+  onClick={(e) => e.stopPropagation()}
+>
         <div className="w-full mt-3 py-1.5 bg-accent text-accent-foreground rounded text-xs font-semibold hover:opacity-90 transition text-center">
           View Details
         </div>
-      </a>
+    </Link>
     </button>
   )
 }
