@@ -7,11 +7,11 @@ import adminRoutes from "./routes/admin.routes.js"
 import userRoutes from "./routes/user.routes.js"
 import eventRoutes from "./routes/event.routes.js"
 import userProfileRoutes from "./routes/userProfile.routes.js"
-
+import interactionRoutes from "./routes/interactions.js"
 import organiserEventRoutes from "./routes/organiserEvent.routes.js"
 import matchmakingRoutes from "./routes/matchmaking.routes.js"
 import teamRoutes from "./routes/team.routes.js"
-
+import recommendationRoutes from "./routes/recommendation.routes.js"
 
 
 const app = express()
@@ -37,6 +37,10 @@ app.use("/api/user-profile", userProfileRoutes)
 app.use("/api/organiser-events", organiserEventRoutes)
 app.use("/api/matchmaking", matchmakingRoutes)
 app.use("/api", teamRoutes)
+
+app.use("/api/interactions", interactionRoutes)
+app.use("/api/recommendations", recommendationRoutes)
+
 
 
 

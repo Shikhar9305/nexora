@@ -1,6 +1,6 @@
 import UserProfile from "../models/UserProfile.js"
 import EventRegistration from "../models/EventRegistration.js"
-
+import UserEventInteraction from "../models/UserEventInteraction.js"
 export const toggleSaveEvent = async (req, res) => {
   try {
     const { userId } = req.body
@@ -20,6 +20,11 @@ export const toggleSaveEvent = async (req, res) => {
     }
 
     await profile.save()
+    await UserEventInteraction.updateOne(
+  { userId, eventId },
+  { $set: { saved: !isSaved } },
+  { upsert: true }
+)
 
     res.json({ saved: !isSaved })
   } catch (err) {

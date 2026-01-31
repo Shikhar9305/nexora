@@ -1,4 +1,6 @@
 
+
+
 import { useEffect, useRef } from "react"
 import * as Cesium from "cesium"
 let googleTilesetPromise = null
@@ -108,13 +110,15 @@ googleTilesetPromise
         id: event._id,
         position: Cesium.Cartesian3.fromDegrees(
           event.location.lon,
-          event.location.lat
+          event.location.lat,
+          40
         ),
         point: {
           pixelSize: 12,
           color: colorMap[event.type],
           outlineColor: Cesium.Color.WHITE,
           outlineWidth: 2,
+         heightReference: Cesium.HeightReference.CLAMP_TO_GROUND
         },
         label: {
           text: event.title,
@@ -125,6 +129,7 @@ googleTilesetPromise
           pixelOffset: new Cesium.Cartesian2(0, -25),
           showBackground: true,
           horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
+          heightReference: Cesium.HeightReference.CLAMP_TO_GROUND
         },
         properties: {
           eventId: event._id,
@@ -163,5 +168,3 @@ googleTilesetPromise
     </div>
   )
 }
-
-

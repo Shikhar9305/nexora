@@ -1,4 +1,5 @@
-import { Users, Calendar, CheckCircle, Clock } from "lucide-react"
+import { Users, Calendar, CheckCircle, Clock, Sparkles } from "lucide-react"
+
 
 const typeColors = {
   hackathon: "bg-cyan-500/10 text-cyan-400 border-cyan-500/20",
@@ -8,8 +9,10 @@ const typeColors = {
 
 const statusConfig = {
   upcoming: { label: "Upcoming", icon: Clock, color: "text-blue-400" },
-  completed: { label: "Completed", icon: CheckCircle, color: "text-green-400" }
+  ongoing: { label: "Ongoing", icon: Sparkles, color: "text-accent" },
+  completed: { label: "Completed", icon: CheckCircle, color: "text-green-400" },
 }
+
 
 const getEventStatus = (event) => {
   const now = new Date()
@@ -24,11 +27,13 @@ export default function RegisteredEventsTab({ events }) {
   const now = new Date()
 
 const upcomingEvents = events.filter(
-  (e) => new Date(e.startDate) >= now
+  (e) => new Date(e.endDate) >= now
 )
 
 const completedEvents = events.filter(
   (e) => new Date(e.endDate) < now
+
+
 )
 
 

@@ -1,5 +1,18 @@
 "use client"
 import { MapPin, Calendar, Users } from "lucide-react"
+import { useEffect } from "react"
+
+/* ================= TRACK HELPER ================= */
+const track = (type, eventId) => {
+  const userId = localStorage.getItem("userId")
+  if (!userId) return
+
+  fetch("/api/interactions", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ userId, eventId, type }),
+  })
+}
 
 const typeColors = {
   hackathon: "bg-cyan-500/20 text-cyan-400 border-cyan-500/30",
@@ -21,9 +34,17 @@ export default function EventCard({ event, isSelected, onSelect }) {
     })
   }
 
+  /* ================= IMPRESSION TRACK ================= */
+  useEffect(() => {
+    track("impression", event._id)
+  }, [])
+
   return (
     <button
-      onClick={() => onSelect(event)}
+      onClick={() => {
+        track("click", event._id)
+        onSelect(event)
+      }}
       className={`w-full text-left p-3 rounded-lg border transition-all ${
         isSelected
           ? "bg-primary/10 border-accent shadow-lg shadow-accent/20"

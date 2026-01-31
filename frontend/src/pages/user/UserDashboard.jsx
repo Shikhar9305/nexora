@@ -13,7 +13,9 @@ const navigate = useNavigate()
 const [activeTab, setActiveTab] = useState("saved")
 const [savedEvents, setSavedEvents] = useState([])
 const [registeredEvents, setRegisteredEvents] = useState([])
-const [recommendedEvents] = useState([]) // optional later
+const [recommendedEvents, setRecommendedEvents] = useState([])
+const [loadingRecommendations, setLoadingRecommendations] = useState(false)
+
 
 
  const summaryData = {
@@ -40,6 +42,30 @@ useEffect(() => {
 
   fetchDashboard()
 }, [])
+
+useEffect(() => {
+  const fetchRecommendations = async () => {
+    if (activeTab !== "recommended") return
+
+    try {
+      setLoadingRecommendations(true)
+      const userId = localStorage.getItem("userId")
+      if (!userId) return
+
+      const res = await fetch(`/api/recommendations/user/${userId}`)
+      const data = await res.json()
+
+      setRecommendedEvents(data || [])
+    } catch (err) {
+      console.error("Failed to load recommendations", err)
+    } finally {
+      setLoadingRecommendations(false)
+    }
+  }
+
+  fetchRecommendations()
+}, [activeTab])
+
 
 
 
@@ -98,6 +124,7 @@ useEffect(() => {
   savedEvents={savedEvents}
   registeredEvents={registeredEvents}
   recommendedEvents={recommendedEvents}
+  loadingRecommendations={loadingRecommendations}
 />
 
         </div>

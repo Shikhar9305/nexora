@@ -36,12 +36,6 @@ export default function CreateTeamModal({ eventId, isOpen, onClose, onCreated })
       if (onCreated) onCreated(data.team)
       onClose()
 
-      // Redirect to event registration in matchmaking mode
-      if (data?.team?._id && eventId) {
-        navigate(
-          `/events/${eventId}/register?mode=matchmaking&teamId=${data.team._id}`
-        )
-      }
     } catch (err) {
       setError(err.message)
     } finally {
@@ -127,4 +121,3 @@ export default function CreateTeamModal({ eventId, isOpen, onClose, onCreated })
     </div>
   )
 }
-

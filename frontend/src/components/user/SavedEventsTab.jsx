@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { MapPin, Trash2, Map } from "lucide-react"
 
@@ -9,6 +9,8 @@ const typeColors = {
   workshop: "bg-orange-500/10 text-orange-400 border-orange-500/20",
   event: "bg-green-500/10 text-green-400 border-green-500/20"
 }
+
+
 
 export default function SavedEventsTab({ events }) {
   const navigate = useNavigate()

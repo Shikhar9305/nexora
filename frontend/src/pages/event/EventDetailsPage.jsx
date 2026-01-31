@@ -22,6 +22,17 @@ import {
 } from "lucide-react"
 
 
+const track = (type, eventId, metadata = {}) => {
+  const userId = localStorage.getItem("userId")
+  if (!userId) return
+
+  fetch("/api/interactions", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ userId, eventId, type, metadata }),
+  })
+}
+
 const typeColors = {
   hackathon: "bg-cyan-500/20 text-cyan-400 border-cyan-500/30",
   workshop: "bg-orange-500/20 text-orange-400 border-orange-500/30",
@@ -41,6 +52,8 @@ export default function EventDetailsPage() {
   const [loading, setLoading] = useState(true)
   const [isSaved, setIsSaved] = useState(false)
   const [registrationDeadlineStatus, setRegistrationDeadlineStatus] = useState(null)
+   
+
 
 
   useEffect(() => {
@@ -64,8 +77,47 @@ export default function EventDetailsPage() {
       }
     }
 
+
+
+
     fetchEvent()
   }, [id])
+
+  
+    useEffect(() => {
+  if (!event?._id) return
+
+  const start = Date.now()
+
+  return () => {
+    const duration = Math.round((Date.now() - start) / 1000)
+    track("view", event._id, { duration })
+  }
+}, [event?._id])
+     const handleSaveEvent = async () => {
+  try {
+    const userId = localStorage.getItem("userId")
+    if (!userId) {
+      alert("Please login first")
+      return
+    }
+
+    const res = await fetch(`/api/user-profile/save-event/${event._id}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ userId }),
+    })
+
+    if (!res.ok) throw new Error("Failed to save event")
+
+    const data = await res.json()
+    setIsSaved(data.saved)
+  } catch (err) {
+    console.error("Save event error:", err)
+  }
+}
 
   if (loading) {
     return (
@@ -132,7 +184,8 @@ export default function EventDetailsPage() {
           </button>
           <div className="flex items-center gap-3">
             <button
-              onClick={() => setIsSaved(!isSaved)}
+        onClick={handleSaveEvent}
+
               className={`p-2 rounded-lg transition ${
                 isSaved
                   ? "bg-accent/20 text-accent"

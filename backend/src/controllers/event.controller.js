@@ -4,6 +4,7 @@
 
 import Event from "../models/Event.js"
 import EventRegistration from "../models/EventRegistration.js"
+import UserEventInteraction from "../models/UserEventInteraction.js"
 import Team from "../models/Team.js"
 
 // GET all approved events (Explore)
@@ -147,6 +148,15 @@ export const registerForEvent = async (req, res) => {
       team.registered = true
       await team.save()
     }
+
+// 🔥 FINAL CONFIRMATION SIGNAL — REGISTRATION (MAX RELEVANCE)
+if (registeredBy) {
+  await UserEventInteraction.updateOne(
+    { userId: registeredBy, eventId },
+    { $set: { registered: true } },
+    { upsert: true }
+  )
+}
 
     res.status(201).json({ message: "Registration successful" })
   } catch (error) {
